@@ -28,9 +28,15 @@ var GRAVITY = 9.8;
 var CAM_HEIGHT = 10;
 var TRAILING_DISTANCE = 30;
 
-var ACCEL = 50.0;
-var DECEL = 80.0;
+var ACCEL = 15.0;
+var DECEL = 20.0;
 var MAX_REVERSE_SPEED = 40.0;
+var TURN_SPEED_MIN = 20.0;  // radians/sec
+var TURN_SPEED_MAX = 80.0;  // radians/sec
+var SPEED_MAX_TURN = 0.0;
+var SPEED_MIN_TURN = 120.0;
+var DRAG_FACTOR = 0.0090;
+var CONSTANT_DRAG = 2.0;
 
 function rotate(v, axis, radians) {
 	var quaternion = Cesium.Quaternion.fromAxisAngle(axis, radians);
@@ -207,8 +213,6 @@ Truck.prototype.tick = function() {
     //    |
     //    +-----+-------------------------+-------------- speed
     //    0    SPEED_MAX_TURN           SPEED_MIN_TURN
-    var SPEED_MAX_TURN = 25.0;
-    var SPEED_MIN_TURN = 120.0;
     if (absSpeed < SPEED_MAX_TURN) {
       turnSpeed = TURN_SPEED_MIN + (TURN_SPEED_MAX - TURN_SPEED_MIN) * (SPEED_MAX_TURN - absSpeed) / SPEED_MAX_TURN;
       turnSpeed *= (absSpeed / SPEED_MAX_TURN);  // Less turn as truck slows
@@ -277,12 +281,10 @@ Truck.prototype.tick = function() {
   absSpeed = Cesium.Cartesian3.magnitude(this.vel);
   if (absSpeed > 0.01) {
     var veldir = Cesium.Cartesian3.normalize(this.vel, new Cesium.Cartesian3());
-    var DRAG_FACTOR = 0.00090;
     var drag = absSpeed * absSpeed * DRAG_FACTOR;
 
     // Some extra constant drag (rolling resistance etc) to make sure
     // we eventually come to a stop.
-    var CONSTANT_DRAG = 2.0;
     drag += CONSTANT_DRAG;
 
     if (drag > absSpeed) {
